@@ -22,13 +22,15 @@ class BookTest extends TestCase
     public function test_a_book_can_be_added()
     {
         // $this->withoutExceptionHandling();
-        $book = $this->post('/books', [
+        $response = $this->post('/books', [
             'title' => 'this is the first book',
             'author' => 'Ahmed Gamal',
         ]);
 
-        $book->assertOk();
+        // $book->assertOk();
+        $book = Book::first();
         $this->assertCount(1, Book::all());
+        $response->assertRedirect($book->path());
     }
 
     public function test_book_title_is_required()
@@ -66,12 +68,32 @@ class BookTest extends TestCase
 
         $book = Book::first();
 
-        $this->put('/books/' . $book->id, [
+        $response = $this->put('/books/' . $book->id, [
             'title' => 'New Title',
             'author' => 'Mohamed Gamal',
         ]);
 
         $this->assertEquals('New Title', Book::first()->title);
         $this->assertEquals('Mohamed Gamal', Book::first()->author);
+
+        $response->assertRedirect($book->fresh()->path());
+    }
+
+    public function test_a_book_can_be_deleted()
+    {
+        $this->withoutExceptionHandling();
+
+        $this->post('/books', [
+            'title' => 'Book title',
+            'author' => 'Ahmed Gamal',
+        ]);
+
+        $book = Book::first();
+        $this->assertCount(1, Book::all());
+
+        $response = $this->delete('/books/' . $book->id);
+        $this->assertCount(0, Book::all());
+
+        $response->assertRedirect('/books');
     }
 }
