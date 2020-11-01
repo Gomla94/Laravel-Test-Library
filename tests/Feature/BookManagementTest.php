@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Book;
+use App\Author;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
-class BookTest extends TestCase
+class BookManagementTest extends TestCase
 {
 
     // Session is missing expected key [errors]. means there are no errors.
@@ -22,10 +24,7 @@ class BookTest extends TestCase
     public function test_a_book_can_be_added()
     {
         // $this->withoutExceptionHandling();
-        $response = $this->post('/books', [
-            'title' => 'this is the first book',
-            'author' => 'Ahmed Gamal',
-        ]);
+        $response = $this->post('/books', $this->book_data());
 
         // $book->assertOk();
         $book = Book::first();
@@ -37,10 +36,7 @@ class BookTest extends TestCase
     {
         // $this->withoutExceptionHandling();
 
-        $book = $this->post('/books', [
-            'title' => '',
-            'author' => 'Ahmed Gamal',
-        ]);
+        $book = $this->post('/books', array_merge($this->book_data(), ['title' => '']));
 
         $book->assertSessionHasErrors('title');
     }
@@ -49,32 +45,27 @@ class BookTest extends TestCase
     {
         // $this->withoutExceptionHandling();
 
-        $book = $this->post('/books', [
-            'title' => 'This is a book',
-            'author' => ''
-        ]);
+        $book = $this->post('/books', array_merge($this->book_data(), ['author_id' => '']));
 
-        $book->assertSessionHasErrors('author');
+        $book->assertSessionHasErrors('author_id');
     }
 
     public function test_can_update_book()
     {
         $this->withoutExceptionHandling();
 
-        $this->post('/books', [
-            'title' => 'Good Title',
-            'author' => 'Ahmed Gamal',
-        ]);
+        $this->post('/books', $this->book_data());
 
         $book = Book::first();
 
         $response = $this->put('/books/' . $book->id, [
             'title' => 'New Title',
-            'author' => 'Mohamed Gamal',
+            'author_id' => 'Mohamed Gamal',
         ]);
 
         $this->assertEquals('New Title', Book::first()->title);
-        $this->assertEquals('Mohamed Gamal', Book::first()->author);
+        $this->assertEquals(2, Book::first()->author_id);
+        $this->assertCount(2, Author::all());
 
         $response->assertRedirect($book->fresh()->path());
     }
@@ -83,10 +74,7 @@ class BookTest extends TestCase
     {
         $this->withoutExceptionHandling();
 
-        $this->post('/books', [
-            'title' => 'Book title',
-            'author' => 'Ahmed Gamal',
-        ]);
+        $this->post('/books', $this->book_data());
 
         $book = Book::first();
         $this->assertCount(1, Book::all());
@@ -95,5 +83,25 @@ class BookTest extends TestCase
         $this->assertCount(0, Book::all());
 
         $response->assertRedirect('/books');
+    }
+
+    public function test_author_is_created_automatically()
+    {
+        $this->withoutExceptionHandling();
+        $this->post('/books', $this->book_data());
+
+        $book = Book::first();
+        $author = Author::first();
+
+        $this->assertEquals($author->id, $book->author_id);
+        $this->assertCount(1, Book::all());
+    }
+
+    protected function book_data()
+    {
+        return [
+            'title' => 'Good Title',
+            'author_id' => 'Ahmed Gamal',
+        ];
     }
 }

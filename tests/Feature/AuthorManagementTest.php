@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class AuthorTest extends TestCase
+class AuthorManagementTest extends TestCase
 {
     use RefreshDatabase;
     /**
